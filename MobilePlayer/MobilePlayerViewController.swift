@@ -275,13 +275,12 @@ open class MobilePlayerViewController: MPMoviePlayerViewController {
   /// - parameters:
   ///  - animated: If `true`, the disappearance of the view is being animated.
   open override func viewWillDisappear(_ animated: Bool) {
-    // Restore status bar appearance.
-    if let previousStatusBarHidden = previousStatusBarHiddenValue {
-        UIApplication.shared.isStatusBarHidden = previousStatusBarHidden
-        setNeedsStatusBarAppearanceUpdate()
-    }
     super.viewWillDisappear(animated)
     stop()
+    // Restore status bar appearance.
+    guard let previousStatusBarHiddenValue = previousStatusBarHiddenValue else { return }
+    UIApplication.shared.isStatusBarHidden = previousStatusBarHiddenValue
+    setNeedsStatusBarAppearanceUpdate()
   }
 
   // MARK: Deinitialization
@@ -367,7 +366,7 @@ open class MobilePlayerViewController: MPMoviePlayerViewController {
   /// parameters:
   ///   - sourceView: On iPads the activity view controller is presented as a popover and a source view needs to
   ///     provided or a crash will occur.
-  open func showContentActions(sourceView: UIView? = nil) {
+  public func showContentActions(sourceView: UIView? = nil) {
     guard let activityItems = activityItems, !activityItems.isEmpty else { return }
     let wasPlaying = (state == .playing)
     moviePlayer.pause()
@@ -457,11 +456,11 @@ open class MobilePlayerViewController: MPMoviePlayerViewController {
         overlay: overlayViewController))
     } else if overlayViewController.parent == nil {
       overlayViewController.delegate = self
-      addChildViewController(overlayViewController)
+        addChild(overlayViewController)
       overlayViewController.view.clipsToBounds = true
       overlayViewController.view.frame = controlsView.overlayContainerView.bounds
       controlsView.overlayContainerView.addSubview(overlayViewController.view)
-      overlayViewController.didMove(toParentViewController: self)
+        overlayViewController.didMove(toParent: self)
     }
   }
 
@@ -471,7 +470,7 @@ open class MobilePlayerViewController: MPMoviePlayerViewController {
       timedOverlayInfo.overlay.dismiss()
     }
     timedOverlays.removeAll()
-    for childViewController in childViewControllers {
+    for childViewController in children {
       if childViewController is WatermarkViewController { continue }
       (childViewController as? MobilePlayerOverlayViewController)?.dismiss()
     }
@@ -612,9 +611,9 @@ open class MobilePlayerViewController: MPMoviePlayerViewController {
 extension MobilePlayerViewController: MobilePlayerOverlayViewControllerDelegate {
 
   func dismiss(mobilePlayerOverlayViewController overlayViewController: MobilePlayerOverlayViewController) {
-    overlayViewController.willMove(toParentViewController: nil)
+    overlayViewController.willMove(toParent: nil)
     overlayViewController.view.removeFromSuperview()
-    overlayViewController.removeFromParentViewController()
+    overlayViewController.removeFromParent()
     if overlayViewController == prerollViewController {
       play()
     }
